@@ -1,4 +1,4 @@
-loadstring(game:HttpGet(""))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/KFChook/KFC.Scripts/refs/heads/main/Scratch"))()
 loadstring(game:HttpGet(""))()
 loadstring(game:HttpGet(""))()
 loadstring(game:HttpGet(""))()
