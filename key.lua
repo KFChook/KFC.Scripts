@@ -29,7 +29,7 @@ local Icons = {
 	Sparkles = "rbxassetid://10709767827",
 	ErrorFolder = "rbxassetid://113312905787220",
 	Candy = "rbxassetid://10709767827",
-	JunkieNewIcon = "rbxassetid://84152001382242"
+	JunkieNewIcon = "rbxassetid://98861852277971"
 }
 
 local function hasFileSystemSupport()
