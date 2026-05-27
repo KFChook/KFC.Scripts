@@ -29,7 +29,7 @@ local Icons = {
 	Sparkles = "rbxassetid://10709767827",
 	ErrorFolder = "rbxassetid://113312905787220",
 	Candy = "rbxassetid://10709767827",
-	JunkieNewIcon = "rbxassetid://75038032192167"
+	JunkieNewIcon = "rbxassetid://118449937104199"
 }
 
 local function hasFileSystemSupport()
@@ -71,7 +71,7 @@ local function clearSavedKey()
 end
 
 local Configuration = {
-	ScreenGuiName = "JunkieKeySystem",
+	ScreenGuiName = "KFCKeySystem",
 	Window = {Size = UDim2.new(0, 333, 0, 500)},
 	Colors = {
 		Bg = Color3.fromRGB(12, 12, 12),
@@ -400,7 +400,7 @@ local function Build()
 	end
 	local titleText = Instance.new("TextLabel")
 	titleText.Size = UDim2.new(1, 0, 1, 0)
-	titleText.Text = "JUNKIE"
+	titleText.Text = "KFC"
 	titleText.TextColor3 = Color3.new(1, 1, 1)
 	titleText.TextTransparency = 0.7
 	titleText.TextSize = 10
@@ -453,7 +453,7 @@ local function Build()
 	local subTitle = Instance.new("TextLabel")
 	subTitle.Size = UDim2.new(1, 0, 0, 16)
 	subTitle.Position = UDim2.fromOffset(0, 28)
-	subTitle.Text = "junkie-development.de"
+	subTitle.Text = "KFC.KeySystem"
 	subTitle.TextColor3 = Configuration.Colors.TextSec
 	subTitle.TextSize = 13
 	subTitle.Font = Enum.Font.Gotham
