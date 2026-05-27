@@ -29,7 +29,7 @@ local Icons = {
 	Sparkles = "rbxassetid://10709767827",
 	ErrorFolder = "rbxassetid://113312905787220",
 	Candy = "rbxassetid://10709767827",
-	JunkieNewIcon = "rbxassetid://"
+	JunkieNewIcon = "rbxassetid://75038032192167"
 }
 
 local function hasFileSystemSupport()
@@ -71,7 +71,7 @@ local function clearSavedKey()
 end
 
 local Configuration = {
-	ScreenGuiName = "KFCKeySystem",
+	ScreenGuiName = "JunkieKeySystem",
 	Window = {Size = UDim2.new(0, 333, 0, 500)},
 	Colors = {
 		Bg = Color3.fromRGB(12, 12, 12),
@@ -177,7 +177,27 @@ Utils.CreateGradient = function(parent, color1, color2, rotation)
 	gradient.Parent = parent
 	return gradient
 end
-		
+
+local function SetBlur(enabled)
+	local blur = Lighting:FindFirstChild("JunkieBlur")
+	if enabled then
+		if not blur then
+			blur = Instance.new("BlurEffect")
+			blur.Name = "JunkieBlur"
+			blur.Size = 0
+			blur.Parent = Lighting
+		end
+		Utils.Tween(blur, {Size = 24}, Configuration.Animations.Bounce)
+	elseif blur then
+		Utils.Tween(blur, {Size = 0}, Configuration.Animations.Medium)
+		task.delay(
+			0.4,
+			function()
+				blur:Destroy()
+			end
+		)
+	end
+end
 
 local ToastSystem = {ActiveToasts = {}, MaxToasts = 3, ToastSpacing = 10}
 
@@ -380,7 +400,7 @@ local function Build()
 	end
 	local titleText = Instance.new("TextLabel")
 	titleText.Size = UDim2.new(1, 0, 1, 0)
-	titleText.Text = "KFC.Key"
+	titleText.Text = "JUNKIE"
 	titleText.TextColor3 = Color3.new(1, 1, 1)
 	titleText.TextTransparency = 0.7
 	titleText.TextSize = 10
@@ -424,7 +444,7 @@ local function Build()
 	titleArea.Parent = content
 	local mainTitle = Instance.new("TextLabel")
 	mainTitle.Size = UDim2.new(1, 0, 0, 26)
-	mainTitle.Text = "KFC"
+	mainTitle.Text = "Junkie"
 	mainTitle.TextColor3 = Color3.new(1, 1, 1)
 	mainTitle.TextSize = 26
 	mainTitle.Font = Enum.Font.GothamBold
@@ -433,7 +453,7 @@ local function Build()
 	local subTitle = Instance.new("TextLabel")
 	subTitle.Size = UDim2.new(1, 0, 0, 16)
 	subTitle.Position = UDim2.fromOffset(0, 28)
-	subTitle.Text = "https://discord.gg/DrV3krjYY"
+	subTitle.Text = "junkie-development.de"
 	subTitle.TextColor3 = Configuration.Colors.TextSec
 	subTitle.TextSize = 13
 	subTitle.Font = Enum.Font.Gotham
