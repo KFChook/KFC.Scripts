@@ -68,10 +68,8 @@
 	local concat = table.concat
 	
 	-- Mobile detection
-	local is_mobile = uis.TouchEnabled and not uis.MouseEnabled
-	local is_android = game:GetService("SystemService") and game:GetService("SystemService").Platform == "Android" or false
-	local is_ios = game:GetService("SystemService") and game:GetService("SystemService").Platform == "iOS" or false
-	local is_mobile_device = is_mobile or is_android or is_ios
+-- Mobile detection
+local is_mobile = game:GetService("UserInputService").TouchEnabledios
 -- 
 
 -- library init
