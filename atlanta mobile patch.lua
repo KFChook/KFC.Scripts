@@ -69,7 +69,7 @@
 	
 	-- Mobile detection
 -- Mobile detection
-local is_mobile = game:GetService("UserInputService").TouchEnabledios
+
 -- 
 
 -- library init
