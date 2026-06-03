@@ -3,7 +3,7 @@ local library, themes = loadstring(game:HttpGet("https://raw.githubusercontent.c
 -- ─── MOBILE PATCH ────────────────────────────────────────────
 -- Host atlanta_mobile_patch.lua somewhere (e.g. GitHub raw)
 -- and replace the URL below.  Or paste the patch inline here.
-loadstring(game:HttpGet("https://raw.githubusercontent.com/YOUR_USER/YOUR_REPO/main/atlanta_mobile_patch.lua"))()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/KFChook/KFC.Scripts/refs/heads/main/atlanta%20mobile%20patch.lua"))()
 -- ─────────────────────────────────────────────────────────────
 
 local dim2 = UDim2.new
