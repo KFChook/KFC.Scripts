@@ -10,7 +10,7 @@ local dim2 = UDim2.new
 local hex  = Color3.fromHex
 
 -- ── Window setup ──────────────────────────────────────────────
-local window = library:window({name = os.date('Atlanta |  - %b %d %Y'), size = dim2(0, 750, 0, 782)})
+local window = library:window({name = os.date('Atlanta |  - %b %d %Y'), size = dim2(0, 650, 0, 682)})
 
 -- ── MOBILE INIT ───────────────────────────────────────────────
 --  One line — creates the floating ☰ toggle button and
