@@ -1,4 +1,4 @@
-local library, themes = loadstring(game:HttpGet("https://raw.githubusercontent.com/hoxj/atlanta-ui-lib/refs/heads/main/atlanta%20loader.lua"))()
+local library, themes = loadstring(game:HttpGet("https://raw.githubusercontent.com/KFChook/KFC.Scripts/refs/heads/main/atlanta%20mobile%20patch.lua"))()
 
 -- ─── MOBILE PATCH ────────────────────────────────────────────
 -- Host atlanta_mobile_patch.lua somewhere (e.g. GitHub raw)
