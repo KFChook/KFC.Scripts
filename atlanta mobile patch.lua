@@ -16,7 +16,6 @@
 	local sound_service = cloneref(game:GetService("SoundService"))
 	local starter_gui = cloneref(game:GetService("StarterGui"))
 	local rs = cloneref(game:GetService("ReplicatedStorage"))
-	local context_action_service = cloneref(game:GetService("ContextActionService"))
 
 	local vec2 = Vector2.new
 	local vec3 = Vector3.new
@@ -67,9 +66,8 @@
 	local remove = table.remove
 	local concat = table.concat
 	
-	-- Mobile detection
--- Mobile detection
-
+	-- Mobile/touch detection
+	local is_touch = uis.TouchEnabled
 -- 
 
 -- library init
@@ -109,15 +107,6 @@
 		
 		-- Mobile support variables
 		mobile_mode = false,
-		mobile_dock_visible = true,
-		mobile_menu_button = nil,
-		mobile_panel_offsets = {},
-		mobile_touch_start = nil,
-		mobile_touch_object = nil,
-		mobile_scroll_velocity = 0,
-		mobile_last_touch_y = 0,
-		mobile_last_touch_time = 0,
-		mobile_active_touch = nil,
 	}
 
 	local flags = library.flags
@@ -234,15 +223,6 @@
 		[Enum.UserInputType.MouseButton3] = "MB3",
 		[Enum.KeyCode.Escape] = "ESC",
 		[Enum.KeyCode.Space] = "SPC",
-		-- Mobile touch inputs
-		[Enum.UserInputType.Touch] = "Touch",
-	}
-	
-	-- Mobile-specific key mapping
-	local mobile_keys = {
-		["Menu"] = {text = "☰", position = "bottom_left"},
-		["Back"] = {text = "◀", position = "bottom_right"},
-		["Close"] = {text = "✕", position = "top_right"},
 	}
 		
 	library.__index = library
@@ -325,8 +305,8 @@
 
 			return hover_instance;
 		end 
-
-		-- Mobile touch hover effect
+		
+		-- Touch hover effect (shows on touch down, fades after)
 		function library:touch_hoverify(hover, parent)
 			local hover_instance = library:create("Frame", {
 				Parent = parent,
@@ -699,78 +679,6 @@ local function get_config_name_from_path(file)
 					end
 				end
 			end
-			
-			-- Show/hide mobile controls
-			if enabled and library.mobile_menu_button then
-				library.mobile_menu_button.Visible = true
-			elseif library.mobile_menu_button then
-				library.mobile_menu_button.Visible = false
-			end
-			
-			-- Toggle dock visibility for mobile
-			if library.dock_button_holder and library.dock_button_holder.Parent then
-				if enabled and not library.mobile_dock_visible then
-					library.dock_button_holder.Parent.Visible = false
-				elseif enabled and library.mobile_dock_visible then
-					library.dock_button_holder.Parent.Visible = true
-				end
-			end
-		end
-		
-		-- Create mobile menu button
-		function library:create_mobile_menu_button()
-			if not is_mobile_device then return nil end
-			
-			local button_holder = library:create("ScreenGui", {
-				Parent = gethui(),
-				Name = "MobileMenuButton",
-				DisplayOrder = 1000000,
-				IgnoreGuiInset = true
-			})
-			
-			local button_frame = library:create("TextButton", {
-				Parent = button_holder,
-				Name = "",
-				Text = "",
-				Position = dim2(0, 10, 0, 10),
-				Size = dim2(0, 50, 0, 50),
-				BorderSizePixel = 0,
-				BackgroundColor3 = themes.preset.outline,
-				AutoButtonColor = false
-			})
-			
-			library:apply_theme(button_frame, "outline", "BackgroundColor3")
-			
-			local inline = library:create("Frame", {
-				Parent = button_frame,
-				Name = "",
-				Position = dim2(0, 1, 0, 1),
-				Size = dim2(1, -2, 1, -2),
-				BorderSizePixel = 0,
-				BackgroundColor3 = themes.preset.inline
-			})
-			
-			library:apply_theme(inline, "inline", "BackgroundColor3")
-			
-			local icon = library:create("TextLabel", {
-				Parent = inline,
-				Name = "",
-				Text = "☰",
-				FontFace = library.font,
-				TextColor3 = themes.preset.accent,
-				TextSize = 24,
-				Size = dim2(1, 0, 1, 0),
-				BackgroundTransparency = 1,
-				BorderSizePixel = 0
-			})
-			
-			library:apply_theme(icon, "accent", "TextColor3")
-			
-			library:draggify(button_frame)
-			
-			library.mobile_menu_button = button_holder
-			
-			return button_holder
 		end
 	-- 
 
@@ -849,8 +757,8 @@ local function get_config_name_from_path(file)
 					LineJoinMode = Enum.LineJoinMode.Miter
 				})
 
-				-- Support mobile hover
-				if is_mobile_device then
+				-- Support mobile hover (show on touch)
+				if is_touch then
 					cfg.path.InputBegan:Connect(function(input)
 						if input.UserInputType == Enum.UserInputType.Touch then
 							watermark_outline.Visible = true
@@ -895,9 +803,6 @@ local function get_config_name_from_path(file)
 				items = {},
 			}
 			
-			-- Store original position for mobile
-			library.mobile_panel_offsets[cfg.name] = {position = cfg.position, size = cfg.size}
-			
 			local items = cfg.items do 
 				-- Panel
 					items.sgui = library:create("ScreenGui", {
@@ -906,8 +811,7 @@ local function get_config_name_from_path(file)
 						Name = "" 
 					})
 					
-					-- Mobile adjustments
-					if is_mobile_device then
+					if is_touch then
 						items.sgui.IgnoreGuiInset = true
 					end
 					
@@ -950,21 +854,19 @@ local function get_config_name_from_path(file)
 						Parent = Close
 					});         
 					
-					Close.MouseButton1Click:Connect(function()
-						items.sgui.Enabled = false;
-					end)
-
-					-- Mobile touch support for close button
-					if is_mobile_device then
+					-- Support touch for close button
+					if is_touch then
 						Close.InputBegan:Connect(function(input)
 							if input.UserInputType == Enum.UserInputType.Touch then
 								items.sgui.Enabled = false;
 							end
 						end)
+					else
+						Close.MouseButton1Click:Connect(function()
+							items.sgui.Enabled = false;
+						end)
 					end
 
-					--library:apply_theme(main_holder, "outline", "BackgroundColor3") 
-					
 					items.window_inline = library:create("Frame", {
 						Parent = items.main_holder,
 						Name = "",
@@ -1109,16 +1011,11 @@ local function get_config_name_from_path(file)
 						TextColor3 = rgb(0, 0, 0),
 						BorderColor3 = rgb(0, 0, 0),
 						Text = "",
-						Size = dim2(0, 25, 0, 25),
+						Size = is_touch and dim2(0, 40, 0, 40) or dim2(0, 25, 0, 25),
 						BorderSizePixel = 0,
 						TextSize = 14,
 						BackgroundColor3 = themes.preset.inline
 					})
-					
-					-- Increase button size for mobile
-					if is_mobile_device then
-						items.button.Size = dim2(0, 40, 0, 40)
-					end
 					
 					local button_inline = library:create("Frame", {
 						Parent = items.button,
@@ -1179,8 +1076,8 @@ local function get_config_name_from_path(file)
 				items.Icon.ImageColor3 = items.sgui.Enabled and themes.preset.accent or themes.preset.inline
 			end)
 
-			-- Support mobile touch for button
-			if is_mobile_device then
+			-- Support touch for panel button
+			if is_touch then
 				items.button.InputBegan:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.Touch then
 						items.sgui.Enabled = not items.sgui.Enabled
@@ -1202,7 +1099,7 @@ local function get_config_name_from_path(file)
 			DisplayOrder = 999999, 
 		})
 		
-		if is_mobile_device then
+		if is_touch then
 			sgui.IgnoreGuiInset = true
 		end
 
@@ -1480,15 +1377,6 @@ local function get_config_name_from_path(file)
 				Parent = gethui(),
 				Name = "" 
 			})
-			
-			-- Create mobile menu button
-			local mobile_menu = library:create_mobile_menu_button()
-			
-			-- Mobile mode toggle function
-			local function toggle_mobile_mode()
-				library:set_mobile_mode(not library.mobile_mode)
-				flags["mobile_mode"] = library.mobile_mode
-			end
 
 			function window.set_menu_visibility(bool) 
 				window.opened = bool 
@@ -1535,15 +1423,10 @@ local function get_config_name_from_path(file)
 					BorderColor3 = rgb(0, 0, 0),
 					AnchorPoint = vec2(0.5, 0),
 					Position = dim2(0.5, 0, 0, 20),
-					Size = dim2(0, 157, 0, 39),
+					Size = is_touch and dim2(0, 200, 0, 50) or dim2(0, 157, 0, 39),
 					BorderSizePixel = 0,
 					BackgroundColor3 = themes.preset.outline
 				}); 
-
-				-- Adjust dock size for mobile
-				if is_mobile_device then
-					dock_outline.Size = dim2(0, 200, 0, 50)
-				end
 
 				library:apply_theme(dock_outline, "outline", "BackgroundColor3"); 
 				dock_outline.Position = dim2(0, dock_outline.AbsolutePosition.X, 0, dock_outline.AbsolutePosition.Y); 
@@ -1627,7 +1510,7 @@ local function get_config_name_from_path(file)
 				}) library:apply_theme(UIGradient, "contrast", "Color") 
 			-- 
 
-			-- keybind list (position controlled by Keybind List X/Y sliders; not draggable)
+			-- keybind list
 				local outline = library:create("Frame", {
 					Parent = sgui,
 					Name = "",
@@ -1737,7 +1620,6 @@ local function get_config_name_from_path(file)
 					Position = dim2(0, 1, 0, 1),
 					BorderColor3 = rgb(0, 0, 0),
 					BorderSizePixel = 0,
-					--AutomaticSize = Enum.AutomaticSize.Y,
 					BackgroundColor3 = themes.preset.inline
 				})
 				library:apply_theme(inline, "inline", "BackgroundColor3")
@@ -1749,7 +1631,6 @@ local function get_config_name_from_path(file)
 					Position = dim2(0, 1, 0, 1),
 					BorderColor3 = rgb(0, 0, 0),
 					BorderSizePixel = 0,
-					--AutomaticSize = Enum.AutomaticSize.Y,
 					BackgroundColor3 = rgb(255, 255, 255)
 				})
 				library.keybind_list = background
@@ -1893,17 +1774,11 @@ local watermark = library:watermark({
 
 task.spawn(function()
     while task.wait(1) do 
-        -- Get FPS and Ping
         local fps = math.floor(1 / game:GetService("RunService").Heartbeat:Wait())
         local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
-        
-        
-        -- Get current user info
         local player = game:GetService("Players").LocalPlayer
         local username = player.Name
         local userId = player.UserId
-        
-        -- Update watermark text
         watermark.change_text("Beyond.hook | Private | Beta | Prison life V1 | FPS: " .. fps .. " | Ping: " .. ping .. "ms | " .. username .. " (" .. userId .. ")")
     end 
 end)
@@ -1962,9 +1837,8 @@ end)
 				local section = column:section({name = "Other"})
 				section:label({name = "UI Bind"})
 				:keybind({callback = window.set_menu_visibility, key = Enum.KeyCode.Insert})
-				-- Mobile mode toggle button
-				if is_mobile_device then
-					section:toggle({name = "Mobile Mode", flag = "mobile_mode", default = true, callback = function(bool)
+				if is_touch then
+					section:toggle({name = "Touch Mode", flag = "touch_mode", default = true, callback = function(bool)
 						library:set_mobile_mode(bool)
 					end})
 				end
@@ -2196,21 +2070,16 @@ end)
 				section:colorpicker({name = "Enemy ESP color", flag = "ESP_Enemy_Color", color = hex("ff0a1f"), callback = function(c) end})
 				section:colorpicker({name = "Friendly ESP color", flag = "ESP_Friendly_Color", color = hex("23ff0a"), callback = function(c) end})
 			--  
-			
-			-- Connect mobile menu button to toggle the menu
-			if mobile_menu then
-				local menu_button = mobile_menu:FindFirstChildWhichIsA("TextButton")
-				if menu_button then
-					menu_button.MouseButton1Click:Connect(function()
-						window.set_menu_visibility(not window.opened)
-					end)
-				end
-				-- Auto-enable mobile mode on mobile devices
-				if is_mobile_device then
+
+			-- Auto-enable touch mode on touch devices
+			if is_touch then
+				task.spawn(function()
 					task.wait(0.5)
-					library:set_mobile_mode(true)
-					flags["mobile_mode"] = true
-				end
+					if library.set_mobile_mode then
+						library:set_mobile_mode(true)
+						flags["touch_mode"] = true
+					end
+				end)
 			end
 
 			return setmetatable(window, library)
@@ -3162,8 +3031,8 @@ end)
 				end
 			end
 			
-			-- Support mobile touch for tab switching
-			if is_mobile_device then
+			-- Support touch for tabs
+			if is_touch then
 				tab_holder.InputBegan:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.Touch then
 						cfg.open_tab()
@@ -3390,25 +3259,25 @@ end)
 						Name = "",
 						PaddingBottom = dim(0, 60)
 					})
+					
+					-- Mobile touch scrolling for multi-section
+					if is_touch then
+						local touch_start_y = 0
+						local start_scroll = 0
+						ScrollingFrame.InputBegan:Connect(function(input)
+							if input.UserInputType == Enum.UserInputType.Touch then
+								touch_start_y = input.Position.Y
+								start_scroll = ScrollingFrame.CanvasPosition.Y
+							end
+						end)
+						ScrollingFrame.InputChanged:Connect(function(input)
+							if input.UserInputType == Enum.UserInputType.Touch then
+								local delta = touch_start_y - input.Position.Y
+								ScrollingFrame.CanvasPosition = Vector2.new(0, math.clamp(start_scroll + delta, 0, ScrollingFrame.CanvasSize.Y.Offset - ScrollingFrame.AbsoluteSize.Y))
+							end
+						end)
+					end
 				--
-				
-				-- Mobile touch support for scrolling in multi-section
-				if is_mobile_device then
-					local touch_start_y = 0
-					local start_scroll = 0
-					ScrollingFrame.InputBegan:Connect(function(input)
-						if input.UserInputType == Enum.UserInputType.Touch then
-							touch_start_y = input.Position.Y
-							start_scroll = ScrollingFrame.CanvasPosition.Y
-						end
-					end)
-					ScrollingFrame.InputChanged:Connect(function(input)
-						if input.UserInputType == Enum.UserInputType.Touch then
-							local delta = touch_start_y - input.Position.Y
-							ScrollingFrame.CanvasPosition = Vector2.new(0, math.clamp(start_scroll + delta, 0, ScrollingFrame.CanvasSize.Y.Offset - ScrollingFrame.AbsoluteSize.Y))
-						end
-					end)
-				end
 				
 				function multi:open_tab(bool) 
 					ScrollingFrame.Visible = bool 
@@ -3417,8 +3286,8 @@ end)
 					text.TextColor3 = bool and themes.preset.accent or themes.preset.text
 				end
 
-				-- Support mobile touch for multi-section tabs
-				if is_mobile_device then
+				-- Support touch for multi-section tabs
+				if is_touch then
 					tabb.InputBegan:Connect(function(input)
 						if input.UserInputType == Enum.UserInputType.Touch then
 							for _, multi_s in next, cfg.sections do 
@@ -3437,13 +3306,11 @@ end)
 						for _, multi_s in next, cfg.sections do 
 							multi_s:open_tab(false)
 						end
-
 						if library.current_element_open then 
 							library.current_element_open.set_visible(false)
 							library.current_element_open.open = false 
 							library.current_element_open = nil 
 						end
-
 						multi:open_tab(true) 
 					end)
 				end
@@ -3585,8 +3452,8 @@ end)
 				PaddingBottom = dim(0, 10)
 			})
 			
-			-- Mobile touch scrolling support
-			if is_mobile_device then
+			-- Mobile touch scrolling for section
+			if is_touch then
 				local touch_start_y = 0
 				local start_scroll = 0
 				ScrollingFrame.InputBegan:Connect(function(input)
@@ -3645,7 +3512,7 @@ end)
 				})
 				
 				-- Increase touch target for mobile
-				if is_mobile_device then
+				if is_touch then
 					slider_REAL.Size = dim2(1, -8, 0, 40)
 				end
 				
@@ -3700,7 +3567,7 @@ end)
 					Name = "slider",
 					Position = dim2(0, 0, 0, 2),
 					BorderColor3 = rgb(0, 0, 0),
-					Size = dim2(1, -1, 1, is_mobile_device and 28 or 12),
+					Size = dim2(1, -1, 1, is_touch and 28 or 12),
 					BorderSizePixel = 0,
 					BackgroundColor3 = themes.preset.outline,
 					Text = "",
@@ -3708,7 +3575,7 @@ end)
 				}) library:apply_theme(slider, "outline", "BackgroundColor3") 
 
 				if not cfg.input_disabled then 
-					if is_mobile_device then
+					if is_touch then
 						library:touch_hoverify(slider_REAL, slider)
 					else
 						library:hoverify(slider_REAL, slider)
@@ -3828,17 +3695,9 @@ end)
 
 			if not cfg.input_disabled then 
 				-- Support both mouse and touch for dragging
-				local function get_position(input)
-					if input.UserInputType == Enum.UserInputType.Touch then
-						return input.Position
-					else
-						return input.Position
-					end
-				end
-				
 				library:connection(uis.InputChanged, function(input)
 					if cfg.dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then 
-						local pos = get_position(input)
+						local pos = input.UserInputType == Enum.UserInputType.Touch and input.Position or input.Position
 						local size_x = (pos.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X
 						local value = ((cfg.max - cfg.min) * size_x) + cfg.min
 						cfg.set(value)
@@ -3855,8 +3714,7 @@ end)
 				slider.InputBegan:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 						cfg.dragging = true
-						-- Set initial value based on touch position
-						local pos = get_position(input)
+						local pos = input.UserInputType == Enum.UserInputType.Touch and input.Position or input.Position
 						local size_x = (pos.X - slider.AbsolutePosition.X) / slider.AbsoluteSize.X
 						local value = ((cfg.max - cfg.min) * size_x) + cfg.min
 						cfg.set(value)
@@ -3910,8 +3768,7 @@ end)
 					BackgroundColor3 = rgb(255, 255, 255)
 				})
 				
-				-- Increase touch target for mobile
-				if is_mobile_device then
+				if is_touch then
 					toggle_holder.Size = dim2(1, -8, 0, 35)
 				end
 				
@@ -4048,7 +3905,7 @@ end)
 				}) library:apply_theme(UIGradient, "contrast", "Color") 
 			--  
 
-			if is_mobile_device then
+			if is_touch then
 				library:touch_hoverify(toggle_holder, toggle)
 			else
 				library:hoverify(toggle_holder, toggle)
@@ -4071,7 +3928,7 @@ end)
 			end
 			
 			-- Support both mouse and touch for toggles
-			if is_mobile_device then
+			if is_touch then
 				toggle_holder.InputBegan:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.Touch then
 						on_click()
@@ -4107,7 +3964,7 @@ end)
 			local cfg = {
 				name = options.name or "Color", 
 				flag = options.flag or tostring(2^789),
-				color = options.color or color(1, 1, 1), -- Default to white color if not provided
+				color = options.color or color(1, 1, 1),
 				alpha = options.alpha or 1,
 				callback = options.callback or function() end,
 				right_holder = self.right_holder,
@@ -4154,7 +4011,7 @@ end)
 					BackgroundColor3 = rgb(250, 165, 27)
 				})
 
-				if is_mobile_device then
+				if is_touch then
 					library:touch_hoverify(colorpicker_button, colorpicker_button)
 				else
 					library:hoverify(colorpicker_button, colorpicker_button)
@@ -4616,7 +4473,7 @@ end)
 			end 
 
 			-- Support both mouse and touch for opening colorpicker
-			if is_mobile_device then
+			if is_touch then
 				colorpicker_button.InputBegan:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.Touch then		
 						cfg.open = not cfg.open
@@ -4709,16 +4566,9 @@ end)
 			end
 			
 			-- Support both mouse and touch for dragging
-			local function start_drag(drag_var, input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-					drag_var = true
-				end
-			end
-			
 			alpha.MouseButton1Down:Connect(function()
 				dragging_alpha = true 
 			end)
-			-- Mobile touch support for alpha
 			alpha.InputBegan:Connect(function(input)
 				if input.UserInputType == Enum.UserInputType.Touch then
 					dragging_alpha = true
@@ -4836,7 +4686,7 @@ end)
 				PaddingRight = dim(0, 2),
 			})
 
-			if is_mobile_device then
+			if is_touch then
 				library:touch_hoverify(element_outline, element_outline)
 			else
 				library:hoverify(element_outline, element_outline)
@@ -5114,28 +4964,48 @@ end)
 					end
 				end
 
-
-				-- ok bro its 30 april2025.. what is this code from october 2024 💀💀
 				hold_button.MouseButton1Click:Connect(function()
 					cfg.set_mode("hold") 
 					cfg.set_visible(false)
 					cfg.open = false 
 				end) 
+				-- Touch support for mode buttons
+				hold_button.InputBegan:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.Touch then
+						cfg.set_mode("hold") 
+						cfg.set_visible(false)
+						cfg.open = false 
+					end
+				end)
 
 				toggle_button.MouseButton1Click:Connect(function()
 					cfg.set_mode("toggle") 
 					cfg.set_visible(false)
 					cfg.open = false 
 				end) 
+				toggle_button.InputBegan:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.Touch then
+						cfg.set_mode("toggle") 
+						cfg.set_visible(false)
+						cfg.open = false 
+					end
+				end)
 
 				always_button.MouseButton1Click:Connect(function()
 					cfg.set_mode("always") 
 					cfg.set_visible(false)
 					cfg.open = false 
 				end) 
+				always_button.InputBegan:Connect(function(input)
+					if input.UserInputType == Enum.UserInputType.Touch then
+						cfg.set_mode("always") 
+						cfg.set_visible(false)
+						cfg.open = false 
+					end
+				end)
 				
 				-- Support both mouse and touch for right click (long press on mobile)
-				if is_mobile_device then
+				if is_touch then
 					local long_press = false
 					local long_press_timer = nil
 					element_outline.InputBegan:Connect(function(input)
@@ -5173,7 +5043,7 @@ end)
 				end
 				
 				-- Support both mouse and touch for binding
-				if is_mobile_device then
+				if is_touch then
 					element_outline.InputBegan:Connect(function(input)
 						if input.UserInputType == Enum.UserInputType.Touch then
 							start_binding()
@@ -5262,8 +5132,7 @@ end)
 					BackgroundColor3 = rgb(255, 255, 255)
 				})
 
-				-- Increase touch target for mobile
-				if is_mobile_device then
+				if is_touch then
 					dropdown_REAL.Size = dim2(1, -8, 0, 35)
 				end
 
@@ -5344,14 +5213,14 @@ end)
 					Name = "dropdown",
 					Position = dim2(0, 0, 0, 2),
 					BorderColor3 = rgb(0, 0, 0),
-					Size = dim2(1, -27, 1, is_mobile_device and 28 or 18),
+					Size = dim2(1, -27, 1, is_touch and 28 or 18),
 					BorderSizePixel = 0,
 					BackgroundColor3 = themes.preset.outline,
 					Text = "",
 					AutoButtonColor = false, 
 				}) library:apply_theme(dropdown, "outline", "BackgroundColor3") 
 				
-				if is_mobile_device then
+				if is_touch then
 					library:touch_hoverify(dropdown_REAL, dropdown)
 				else
 					library:hoverify(dropdown_REAL, dropdown)
@@ -5523,7 +5392,7 @@ end)
 					library:apply_theme(background, "accent", "ScrollBarImageColor3") 
 					
 					-- Mobile touch scrolling for dropdown
-					if is_mobile_device then
+					if is_touch then
 						local touch_start_y = 0
 						local start_scroll = 0
 						background.InputBegan:Connect(function(input)
@@ -5695,7 +5564,7 @@ end)
 			end
 
 			-- Support both mouse and touch for dropdown
-			if is_mobile_device then
+			if is_touch then
 				dropdown.InputBegan:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.Touch then
 						cfg.open = not cfg.open 
@@ -5727,7 +5596,6 @@ end)
 
 				scale = options.size or 232, 
 				items = options.items or {"1", "2", "3"}, 
-				-- order = options.order or 1, 
 				placeholdertext = options.placeholder or options.placeholdertext or "search here...",
 				visible = options.visible or true,
 
@@ -5861,7 +5729,7 @@ end)
 				}) library:apply_theme(ScrollingFrame, "accent", "ScrollBarImageColor3") 
 				
 				-- Mobile touch scrolling for list
-				if is_mobile_device then
+				if is_touch then
 					local touch_start_y = 0
 					local start_scroll = 0
 					ScrollingFrame.InputBegan:Connect(function(input)
@@ -6012,8 +5880,7 @@ end)
 					BackgroundColor3 = rgb(255, 255, 255)
 				})
 				
-				-- Increase touch target for mobile
-				if is_mobile_device then
+				if is_touch then
 					textbox_holder.Size = dim2(1, -8, 0, 35)
 				end
 				
@@ -6033,11 +5900,11 @@ end)
 					Name = "",
 					Position = dim2(0, 0, 0, 2),
 					BorderColor3 = rgb(0, 0, 0),
-					Size = dim2(1, -27, 0, is_mobile_device and 28 or 18),
+					Size = dim2(1, -27, 0, is_touch and 28 or 18),
 					BorderSizePixel = 0,
 					BackgroundColor3 = themes.preset.outline
 				})
-				if is_mobile_device then
+				if is_touch then
 					library:touch_hoverify(textbox_holder, button)
 				else
 					library:hoverify(textbox_holder, button)
@@ -6223,13 +6090,13 @@ end)
 				Name = "",
 				Position = dim2(0, 0, 0, 2),
 				BorderColor3 = rgb(0, 0, 0),
-				Size = dim2(1, -27, 0, is_mobile_device and 28 or 18),
+				Size = dim2(1, -27, 0, is_touch and 28 or 18),
 				BorderSizePixel = 0,
 				BackgroundColor3 = themes.preset.outline,
 				Text = ""
 			})
 
-			if is_mobile_device then
+			if is_touch then
 				library:touch_hoverify(button, button)
 			else
 				library:hoverify(button, button)
@@ -6322,7 +6189,7 @@ end)
 			})
 
 			-- Support both mouse and touch for button
-			if is_mobile_device then
+			if is_touch then
 				button.InputBegan:Connect(function(input)
 					if input.UserInputType == Enum.UserInputType.Touch then
 						cfg.callback() 
@@ -6567,7 +6434,7 @@ end)
 				}) library:apply_theme(ScrollingFrame, "accent", "ScrollBarImageColor3") 
 				
 				-- Mobile touch scrolling for playerlist
-				if is_mobile_device then
+				if is_touch then
 					local touch_start_y = 0
 					local start_scroll = 0
 					ScrollingFrame.InputBegan:Connect(function(input)
@@ -6607,7 +6474,6 @@ end)
 				local key = playerObj.Team.Name:lower():gsub("%s+", "")
 				return team_colors[key] or themes.preset.text
 			end
-			-- Sort order: Guards first (0), then Inmates (1), then Criminals (2), then others (3)
 			local function get_team_sort_order(playerObj)
 				if not playerObj or not playerObj.Team or not playerObj.Team.Name then return 3 end
 				local key = playerObj.Team.Name:lower():gsub("%s+", "")
@@ -6998,12 +6864,13 @@ end)
 	-- 
 -- 
 
--- Auto-enable mobile mode on mobile devices
-if is_mobile_device then
+-- Auto-enable touch mode on touch devices
+if is_touch then
 	task.spawn(function()
 		task.wait(0.5)
 		if library.set_mobile_mode then
 			library:set_mobile_mode(true)
+			flags["touch_mode"] = true
 		end
 	end)
 end
