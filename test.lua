@@ -1,5 +1,5 @@
 -- Load the library from raw repo
-local library = loadstring(game:HttpGet("YOUR_RAW_REPO_URL_HERE"))()
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/KFChook/umt/refs/heads/main/KfcHook%20UI%20Library.lua"))()
 
 -- Create a window
 local Window = library:window({
